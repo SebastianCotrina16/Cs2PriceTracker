@@ -1,0 +1,102 @@
+---
+const responseKnives = await fetch("http://127.0.0.1:8000/knives");
+const knives = await responseKnives.json();
+
+const responseGloves = await fetch("http://127.0.0.1:8000/gloves");
+const gloves = await responseGloves.json();
+---
+
+<!doctype html>
+<html lang="es">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>CS2 Market Tracker</title>
+        <link rel="stylesheet" href="/styles.css" />
+    </head>
+    <body>
+        <h1>CS2 Market Tracker</h1>
+
+        <!-- 🔎 Búsqueda de Skin -->
+        <section>
+            <h2>🔎 Buscar una Skin</h2>
+            <form id="search-form">
+                <input
+                    type="text"
+                    id="search-input"
+                    placeholder="Ej: ★ Karambit | Doppler (Factory New)"
+                    required
+                />
+                <button type="submit">Buscar</button>
+            </form>
+            <div id="search-result"></div>
+        </section>
+
+        <!-- 🔪 Cuchillo Más Barato -->
+        <section>
+            <h2>🔪 Cuchillo Más Barato</h2>
+            <div class="item-card">
+                <img src={knives.image} alt={knives.name} />
+                <h3>{knives.name}</h3>
+                <p>Precio: ${knives.price}</p>
+                <a href={knives.link} target="_blank">Ver en Steam</a>
+            </div>
+        </section>
+
+        <!-- 🧤 Guantes Más Baratos -->
+        <section>
+            <h2>🧤 Guantes Más Baratos</h2>
+            <div class="item-card">
+                <img src={gloves.image} alt={gloves.name} />
+                <h3>{gloves.name}</h3>
+                <p>Precio: ${gloves.price}</p>
+                <a href={gloves.link} target="_blank">Ver en Steam</a>
+            </div>
+        </section>
+
+        <script>
+            document
+                .getElementById("search-form")
+                .addEventListener("submit", async function (event) {
+                    event.preventDefault();
+                    const query = document.getElementById("search-input").value;
+                    const response = await fetch(
+                        `http://127.0.0.1:8000/skin/${encodeURIComponent(query)}`,
+                    );
+                    const data = await response.json();
+
+                    console.log("Datos recibidos del backend:", data); // Debugging para ver la respuesta en consola
+
+                    const resultDiv = document.getElementById("search-result");
+                    if (data.error) {
+                        resultDiv.innerHTML = `<p style="color: red;">❌ ${data.error}</p>`;
+                    } else {
+                        let historyHTML = "";
+                        if (
+                            data.history &&
+                            Array.isArray(data.history) &&
+                            data.history.length > 0
+                        ) {
+                            historyHTML =
+                                "<h4>📈 Historial de Precios:</h4><ul>";
+                            data.history.forEach((entry) => {
+                                historyHTML += `<li>$${entry.price} - ${entry.date}</li>`;
+                            });
+                            historyHTML += "</ul>";
+                        } else {
+                            historyHTML =
+                                "<p>📉 No hay historial de precios.</p>";
+                        }
+
+                        resultDiv.innerHTML = `
+                    <div class="item-card">
+                        <h3>${data.name}</h3>
+                        <p>💰 Precio Actual: $${data.current_price || "N/A"}</p>
+                        ${historyHTML}
+                    </div>
+                `;
+                    }
+                });
+        </script>
+    </body>
+</html>
